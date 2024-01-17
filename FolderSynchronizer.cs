@@ -3,10 +3,10 @@ using System.Timers;
 
 class FolderSynchronizer
 {
-    static string sourceFolderPath = "";
-    static string replicaFolderPath = "";
-    static string logFilePath = "";
-    static int synchronizationInterval = 0;
+    private static string sourceFolderPath = "";
+    private static string replicaFolderPath = "";
+    private static string logFilePath = "";
+    private static int synchronizationInterval = 0;
 
     static void Main(string[] args)
     {
@@ -16,10 +16,7 @@ class FolderSynchronizer
             return;
         }
 
-        sourceFolderPath = args[0];
-        replicaFolderPath = args[1];
-        synchronizationInterval = Convert.ToInt32(args[2]);
-        logFilePath = args[3];
+        Initialize(args);
 
         Console.WriteLine($"Source Folder: {sourceFolderPath}");
         Console.WriteLine($"Replica Folder: {replicaFolderPath}");
@@ -41,6 +38,14 @@ class FolderSynchronizer
         while (Console.ReadKey().Key != ConsoleKey.Q) { }
     }
 
+    private static void Initialize(string[] args)
+    {
+        sourceFolderPath = args[0];
+        replicaFolderPath = args[1];
+        synchronizationInterval = Convert.ToInt32(args[2]);
+        logFilePath = args[3];
+    }
+
     private static void TimerElapsed(object? sender, ElapsedEventArgs e)
     {
         SynchronizeFolders();
@@ -52,41 +57,56 @@ class FolderSynchronizer
         {
             LogMessage("Synchronization started.");
 
-            // Ensure replica folder exists
-            if (!Directory.Exists(replicaFolderPath))
-            {
-                Directory.CreateDirectory(replicaFolderPath);
-                LogMessage($"Replica folder created: {replicaFolderPath}");
-            }
+            EnsureReplicaFolderExists();
 
-            // Synchronize files
-            foreach (string sourceFilePath in Directory.GetFiles(sourceFolderPath))
-            {
-                string fileName = Path.GetFileName(sourceFilePath);
-                string replicaFilePath = Path.Combine(replicaFolderPath, fileName);
+            SynchronizeFiles();
 
-                File.Copy(sourceFilePath, replicaFilePath, true);
-                LogMessage($"Copied: {fileName}");
-            }
-
-            // Remove excess files in replica folder
-            foreach (string replicaFilePath in Directory.GetFiles(replicaFolderPath))
-            {
-                string fileName = Path.GetFileName(replicaFilePath);
-                string sourceFilePath = Path.Combine(sourceFolderPath, fileName);
-
-                if (!File.Exists(sourceFilePath))
-                {
-                    File.Delete(replicaFilePath);
-                    LogMessage($"Removed: {fileName}");
-                }
-            }
+            RemoveExcessFiles();
 
             LogMessage("Synchronization completed.");
         }
         catch (Exception ex)
         {
             LogMessage($"Error during synchronization: {ex.Message}");
+        }
+    }
+
+    private static void EnsureReplicaFolderExists()
+    {
+        // Ensure replica folder exists
+        if (!Directory.Exists(replicaFolderPath))
+        {
+            Directory.CreateDirectory(replicaFolderPath);
+            LogMessage($"Replica folder created: {replicaFolderPath}");
+        }
+    }
+
+    private static void SynchronizeFiles()
+    {
+        // Synchronize files
+        foreach (string sourceFilePath in Directory.GetFiles(sourceFolderPath))
+        {
+            string fileName = Path.GetFileName(sourceFilePath);
+            string replicaFilePath = Path.Combine(replicaFolderPath, fileName);
+
+            File.Copy(sourceFilePath, replicaFilePath, true);
+            LogMessage($"Copied: {fileName}");
+        }
+    }
+
+    private static void RemoveExcessFiles()
+    {
+        // Remove excess files in replica folder
+        foreach (string replicaFilePath in Directory.GetFiles(replicaFolderPath))
+        {
+            string fileName = Path.GetFileName(replicaFilePath);
+            string sourceFilePath = Path.Combine(sourceFolderPath, fileName);
+
+            if (!File.Exists(sourceFilePath))
+            {
+                File.Delete(replicaFilePath);
+                LogMessage($"Removed: {fileName}");
+            }
         }
     }
 
